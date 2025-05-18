@@ -1,0 +1,44 @@
+Move.toml : [package]
+name    = "alva"
+version = "0.0.1"
+edition = "2024"
+
+[dependencies.Sui]
+git    = "https://github.com/MystenLabs/sui.git"
+subdir = "crates/sui-framework/packages/sui-framework"
+rev    = "framework/mainnet"   # ou testnet/devnet selon ton réseau
+
+[addresses]
+alva = "0x911da2ff8cff73f17d4b3c33b2d54713c656bea96ec057502658f25ab4c91f32"
+
+alva.move : module alva::alva_coin {
+    // on ne garde que TreasuryCap
+    use sui::coin::TreasuryCap;
+
+    public struct ALVA_COIN has drop {}
+
+    fun init(witness: ALVA_COIN, ctx: &mut sui::tx_context::TxContext) {
+        let (treasury, metadata) = sui::coin::create_currency(
+            witness,
+            6u8,
+            b"ALVA",
+            b"Alva",
+            b"Alva demo coin",
+            std::option::none(),
+            ctx,
+        );
+
+        sui::transfer::public_freeze_object(metadata);
+        sui::transfer::public_transfer(treasury, ctx.sender());
+    }
+
+    public fun mint(
+        treasury: &mut TreasuryCap<ALVA_COIN>,
+        amount: u64,
+        recipient: address,
+        ctx: &mut sui::tx_context::TxContext,
+    ) {
+        let coin = sui::coin::mint(treasury, amount, ctx);
+        sui::transfer::public_transfer(coin, recipient);
+    }
+}
